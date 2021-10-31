@@ -137,6 +137,7 @@ class ZapAuth:
             if match:
                 auth_header = "Bearer " + match.group()
                 self.add_authorization_header(zap, auth_header)
+        logging.info('Auth: finished set_authentication()')
 
     def login_from_token_endpoint(self, zap):
         logging.info('Fetching authentication token from endpoint')
@@ -221,7 +222,7 @@ class ZapAuth:
     def submit_form(self, submit_action, submit_field_name, username_element):
         if submit_action == "click":
             element = self.find_element(
-                submit_field_name, "submit", "//*[@type='submit' or @type='button' or button]")
+                submit_field_name, "submit", "//*[@type='submit']")
             element.click()
             logging.info('Clicked the %s element', submit_field_name)
         elif username_element:
