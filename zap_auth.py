@@ -65,7 +65,7 @@ class ZapAuth:
         profile.set_preference("security.tls.version.min", 1)
 
         options = webdriver.FirefoxOptions()
-        options.headless = not self.config.auth_display
+        options.headless = True
 
         self.driver = webdriver.Firefox(
             firefox_profile=profile, firefox_options=options)
