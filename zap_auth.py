@@ -127,9 +127,10 @@ class ZapAuth:
         logging.info('Start set global var')
         logging.info(os.getcwd())
         logging.info(os.listdir())
+        zap.script.set_global_var('baseScanUrl',target)
         zap.script.set_global_var('sessionValue',sessionValue)
         logging.info('Finish set global var')
-        zap.script.load('load_session_storage','selenium','Oracle Nashorn','scripts/load_session.js')
+        zap.script.load('load_session_storage','selenium','Oracle Nashorn','/home/zap/.ZAP_D/scripts/scripts/active/load_session.js')
         zap.script.enable('load_session_storage')
         logging.info('Finish load session_storage script to zap')
 
