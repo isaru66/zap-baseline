@@ -35,6 +35,16 @@ def zap_started(zap, target):
 
     return zap, target
 
+def zap_ajax_spider(zap, target, max_time):
+    try:
+        logging.info("All urls from zap")
+        for url in zap.core.urls(None):
+            logging.debug("url: %s",url)
+    
+    except Exception:
+        logging.error("error in zap_ajax_spider: %s", traceback.print_exc())
+        os._exit(1)
+
 def zap_pre_shutdown(zap):
     logging.debug("Overview of spidered URL's:")
     for url in zap.spider.all_urls:
