@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import localstorage
 import pyotp
-
+import json
 
 class ZapAuth:
     driver = None
@@ -55,6 +55,11 @@ class ZapAuth:
             zap.context.exclude_from_context(context_name, exclude)
             logging.info('Excluded %s', exclude)
 
+        # add exclude from zap proxy
+        for exclude in self.config.auth_exclude_urls:
+            zap.core.exclude_from_proxy(regex=exclude)
+            logging.info('Excluded from proxy %s', exclude)
+
     def setup_webdriver(self):
         logging.info('Start webdriver')
 
@@ -74,7 +79,7 @@ class ZapAuth:
         self.driver.maximize_window()
 
     def authenticate(self, zap, target):
-        try:
+        # try:
             # setup the zap context
             if zap:
                 self.setup_context(zap, target)
@@ -100,18 +105,61 @@ class ZapAuth:
                 logging.warning(
                     'No login URL, Token Endpoint or Bearer token provided - skipping authentication')
 
-        except Exception:
-            logging.error("error in authenticate: %s", traceback.print_exc())
-        finally:
             self.cleanup()
 
+        # except Exception:
+        #     logging.error("error in authenticate: %s", traceback.print_exc())
+        # finally:
+        #     self.cleanup()
+
+    def check_authorize_after_login(self):
+        logging.info('Start check authentication after login')
+        time.sleep(5)
+        self.driver.find_element_by_id("MAINMENU_IMG_DASHBOARD")
+        self.driver.find_element_by_id("MAINMENU_IMG_SEARCH")
+        self.driver.find_element_by_id("MAINMENU_IMG_CHECK_STOCK")
+        time.sleep(5)
+        logging.info('Finish check authentication after login')
+
+
+    def load_script(self, zap, target, sessionValue):
+        logging.info('Start load session_storage script to zap')
+        logging.info('Start set global var')
+        logging.info(os.getcwd())
+        logging.info(os.listdir())
+        zap.script.set_global_var('baseScanUrl',target)
+        zap.script.set_global_var('sessionValue',sessionValue)
+        logging.info('Finish set global var')
+        zap.script.load('load_session_storage','selenium','Oracle Nashorn','/home/zap/.ZAP_D/scripts/scripts/active/load_session.js')
+        zap.script.enable('load_session_storage')
+        logging.info('Finish load session_storage script to zap')
+
+
     def set_authentication(self, zap, target):
+        logging.info("Test Http Session1")
+        logging.info(zap.httpsessions.sessions(target))
+
+
         logging.info('Finding authentication cookies')
+        
+        # get session storage value
+        sessionValue = self.driver.execute_script("return sessionStorage.getItem('dXNlcmFmc0RldGFpbA==')")
+        # incase use constant value instead of get new one
+        # sessionValue = "constant_value"
+
+        ## increase exp by 1 year
+        temp_session_value = json.loads(sessionValue)
+        temp_session_value['exp'] = str(int(temp_session_value['exp'])+31536000)
+        sessionValue = json.dumps(temp_session_value)
+        sessionValue = sessionValue.replace("'",'"')
+        logging.info("Session Value")
+        logging.info(sessionValue)
 
         # Create an empty session for session cookies
         if zap:
             zap.httpsessions.add_session_token(target, 'session_token')
             zap.httpsessions.create_empty_session(target, 'auth-session')
+
 
         # add all found cookies as session cookies
         for cookie in self.driver.get_cookies():
@@ -138,7 +186,20 @@ class ZapAuth:
             if match:
                 auth_header = "Bearer " + match.group()
                 self.add_authorization_header(zap, auth_header)
-        logging.info('Auth: finished set_authentication()')
+
+        ## set authorization header from session storage
+        logging.info('Extract access_token from session storage value')
+        sessionValueJson = json.loads(sessionValue)
+        token = sessionValueJson['access_token']
+        logging.info(token)
+        match = re.search('(eyJ[^"]*)', token)
+        if match:
+            auth_header = "Bearer " + match.group()
+            self.add_authorization_header(zap, auth_header)
+
+        ## set sessionValue to global var and script
+        self.load_script(zap,target,sessionValue)
+
 
     def login_from_token_endpoint(self, zap):
         logging.info('Fetching authentication token from endpoint')
@@ -210,20 +271,23 @@ class ZapAuth:
                          self.config.auth_submit_field_name, username_element)
 
         # wait for the page to load
-        if self.config.auth_check_element:
-            try:
-                logging.info('Check element')
-                WebDriverWait(self.driver, self.config.auth_check_delay).until(
-                    EC.presence_of_element_located((By.XPATH, self.config.auth_check_element)))
-            except TimeoutException:
-                logging.info('Check element timeout')
-        else:
-            time.sleep(self.config.auth_check_delay)
+        time.sleep(5)
+
+        logging.info("show session storage")
+        # self.driver.get('https://dev-aftersale-portal.cdc.ais.th')
+        logging.info(self.driver.execute_script("return sessionStorage.key('https://dev-aftersale-portal.cdc.ais.th')"))
+        logging.info("show session storage item ")
+        logging.info(self.driver.execute_script("return sessionStorage.getItem('dXNlcmFmc0RldGFpbA==')"))
+        
+        self.check_authorize_after_login()
+        
 
     def submit_form(self, submit_action, submit_field_name, username_element):
         if submit_action == "click":
             element = self.find_element(
-                submit_field_name, "submit", "//*[@type='submit']")
+                # submit_field_name, "submit", "//*[@type='submit']")
+            # submit_field_name,"button", "//*[@type='button']")
+            submit_field_name, "submit", "//*[@type='submit' or @type='button' or button]")
             element.click()
             logging.info('Clicked the %s element', submit_field_name)
         elif username_element:
