@@ -8,7 +8,9 @@ function browserLaunched(utils) {
     // var jsUrl = 'https://dev-aftersale-portal.cdc.ais.th/';
     var jsUrl = ScriptVars.getGlobalVar('baseScanUrl');
     var val = ScriptVars.getGlobalVar('sessionValue');
+    logger('jsUrl: '+jsUrl);
     logger('sessionValue: '+val);
+    
     if (url.startsWith(jsUrl)) {
         logger('url: ' + jsUrl + ' setting token ');
         var script = 'window.sessionStorage.setItem(\'dXNlcmFmc0RldGFpbA==\', \'' + val + '\');\n' +
@@ -18,7 +20,12 @@ function browserLaunched(utils) {
 	
 	logger("set session storage " + utils.getBrowserId() + ' url: ' + jsUrl);
      
-	
+    url = wd.get("https://dev-aftersale-portal.cdc.ais.th/aftersale/afscenter/main-menu");
+    utils.waitForURL(5000);
+    logger('loading to afs portal ' + utils.getBrowserId() + ' url: ' + url);
+
+    var screenshotBase64 = wd.getScreenshotAs('OutputType.BASE64');
+    logger('screenshot: ' + screenshotBase64);
 }
 // Logging with the script name is super helpful!
 function logger() {

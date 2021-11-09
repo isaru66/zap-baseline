@@ -287,7 +287,7 @@ class ZapAuth:
             element = self.find_element(
                 # submit_field_name, "submit", "//*[@type='submit']")
             # submit_field_name,"button", "//*[@type='button']")
-            submit_field_name, "submit", "//*[@type='submit' or @type='button' or button]")
+            submit_field_name, "submit", "//*[ (self::input or self::button) and (@type='submit' or @type='button')]")
             element.click()
             logging.info('Clicked the %s element', submit_field_name)
         elif username_element:
