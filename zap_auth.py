@@ -123,15 +123,12 @@ class ZapAuth:
 
 
     def load_script(self, zap, target, sessionValue):
-        logging.info('Start load session_storage script to zap')
         logging.info('Start set global var')
         logging.info(os.getcwd())
         logging.info(os.listdir())
         zap.script.set_global_var('baseScanUrl',target)
         zap.script.set_global_var('sessionValue',sessionValue)
         logging.info('Finish set global var')
-        zap.script.load('load_session_storage','selenium','Oracle Nashorn','/home/zap/.ZAP_D/scripts/scripts/active/load_session.js')
-        zap.script.enable('load_session_storage')
         logging.info('Finish load session_storage script to zap')
 
 
@@ -187,10 +184,10 @@ class ZapAuth:
                 auth_header = "Bearer " + match.group()
                 self.add_authorization_header(zap, auth_header)
 
-        ## set authorization header from session storage
+        # set authorization header from session storage
         logging.info('Extract access_token from session storage value')
         sessionValueJson = json.loads(sessionValue)
-        token = sessionValueJson['access_token']
+        token = sessionValueJson['id_token']
         logging.info(token)
         match = re.search('(eyJ[^"]*)', token)
         if match:

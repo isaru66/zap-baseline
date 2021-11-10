@@ -4,6 +4,7 @@ import zap_blindxss
 import os
 import traceback
 import logging
+import time
 
 config = zap_config.ZapConfig()
 
@@ -35,7 +36,29 @@ def zap_started(zap, target):
 
     return zap, target
 
+
 def zap_active_scan(zap, target, policy):
+    
+    ## Do custom ajax spider
+    logging.info("Do custom ajax_spider")
+    navigate_url = config.first_navigate_url
+
+    # set global variable,load and enable script to load session
+    zap.script.set_global_var('navigateUrl',navigate_url)
+    zap.script.load('load_session_storage','selenium','Oracle Nashorn','/home/zap/.ZAP_D/scripts/scripts/active/custom_session.js')
+    zap.script.enable('load_session_storage')
+    logging.info('navigate_url: %s',navigate_url)
+
+    ## ajax spider scan
+    zap.ajaxSpider.scan(url=navigate_url,contextname='ctx-zap-docker')
+
+    while True:
+        if (zap.ajaxSpider.status != "running"):
+            zap.script.disable('load_session_storage') ## disable script after finish
+            break
+        logging.info("Custom spider status: %s",zap.ajaxSpider.status)
+        time.sleep(10)
+
     try:
         logging.info("All urls from zap")
         for url in zap.core.urls(None):

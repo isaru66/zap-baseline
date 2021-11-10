@@ -29,6 +29,7 @@ class ZapConfig:
             self.auth_check_element = self._get_zap_param('auth.check_element') or ''
             self.auth_exclude_urls = self._get_zap_param_list('auth.exclude') or list()
             self.auth_include_urls = self._get_zap_param_list('auth.include') or list()
+            self.first_navigate_url = self._get_zap_param('first_navigate_url') or ''
             self.xss_collector = self._get_zap_param('xss.collector') or ''
         except Exception:
             logging.error("error in start_docker_zap: %s", traceback.print_exc())
